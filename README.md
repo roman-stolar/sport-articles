@@ -232,6 +232,7 @@ query {
       title
       content
       createdAt
+      deletedAt
       imageUrl
     }
     totalCount
@@ -270,6 +271,7 @@ mutation {
     title
     content
     createdAt
+    deletedAt
     imageUrl
   }
 }
