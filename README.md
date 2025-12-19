@@ -333,7 +333,7 @@ sport-articles/
 │       │   ├── pages/                 # Next.js Pages Router
 │       │   │   ├── _app.tsx           # App wrapper with providers
 │       │   │   ├── _document.tsx      # Document structure
-│       │   │   ├── index.tsx           # List page (SSR with getServerSideProps)
+│       │   │   ├── index.tsx           # List page (SSR)
 │       │   │   ├── create.tsx          # Create article page
 │       │   │   └── article/
 │       │   │       └── [articleId]/
@@ -385,7 +385,7 @@ sport-articles/
 
 - **Next.js 14** - React framework with Pages Router
 - **TypeScript** - Type-safe JavaScript
-- **Apollo Client** - GraphQL client (with SSR support)
+- **Apollo Client** - GraphQL client (SSR)
 - **React Hook Form** - Form management
 - **Zod** - Schema validation
 - **Material UI** - React component library
@@ -414,9 +414,9 @@ sport-articles/
   - List page shows first 10 articles via SSR using `getServerSideProps`
   - Article details page uses SSR with `getServerSideProps`
 - **Pages**:
-  - `/` - Articles list with SSR
+  - `/` - Articles list (SSR)
   - `/create` - Create new article
-  - `/article/[articleId]` - Article details with SSR
+  - `/article/[articleId]` - Article details (SSR)
   - `/article/[articleId]/edit` - Edit article
 - **Features**:
   - Client-side validation using Zod
