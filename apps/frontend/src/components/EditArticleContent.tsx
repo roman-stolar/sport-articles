@@ -5,9 +5,8 @@ import { GET_ARTICLE, UPDATE_ARTICLE, GET_ARTICLES } from '@/lib/graphql/queries
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
 import {
   Box,
   Container,
@@ -19,7 +18,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useArticles } from '@/lib/ArticlesContext';
 
 const updateArticleSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -29,15 +27,16 @@ const updateArticleSchema = z.object({
 
 type UpdateArticleFormData = z.infer<typeof updateArticleSchema>;
 
-export default function EditArticlePage() {
+interface EditArticleContentProps {
+  articleId: string;
+}
+
+export function EditArticleContent({ articleId }: EditArticleContentProps) {
   const router = useRouter();
-  const params = useParams();
-  const id = params.id as string;
-  const { reset } = useArticles();
 
   const { data, loading: queryLoading, error: queryError } = useQuery(GET_ARTICLE, {
-    variables: { id },
-    skip: !id,
+    variables: { id: articleId },
+    skip: !articleId,
   });
 
   const [updateArticle, { loading: mutationLoading, error: mutationError }] = useMutation(
@@ -45,13 +44,11 @@ export default function EditArticlePage() {
     {
       refetchQueries: [
         { query: GET_ARTICLES, variables: { limit: 10, offset: 0 } },
-        { query: GET_ARTICLE, variables: { id } },
+        { query: GET_ARTICLE, variables: { id: articleId } },
       ],
       awaitRefetchQueries: true,
       onCompleted: () => {
-        reset();
-        router.push(`/article/${id}`);
-        router.refresh();
+        router.push(`/article/${articleId}`);
       },
     }
   );
@@ -75,7 +72,7 @@ export default function EditArticlePage() {
     try {
       await updateArticle({
         variables: {
-          id,
+          id: articleId,
           input: {
             title: formData.title,
             content: formData.content,
@@ -126,7 +123,7 @@ export default function EditArticlePage() {
         <Box sx={{ mb: 4 }}>
           <Button
             component={Link}
-            href={`/article/${id}`}
+            href={`/article/${articleId}`}
             startIcon={<ArrowBackIcon />}
             sx={{ mb: 2 }}
           >
@@ -177,7 +174,7 @@ export default function EditArticlePage() {
               />
 
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
-                <Button component={Link} href={`/article/${id}`}>
+                <Button component={Link} href={`/article/${articleId}`}>
                   Cancel
                 </Button>
                 <Button type="submit" variant="contained" disabled={mutationLoading}>
@@ -191,3 +188,4 @@ export default function EditArticlePage() {
     </Box>
   );
 }
+

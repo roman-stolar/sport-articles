@@ -7,7 +7,7 @@ A full-stack application for managing sports articles using TypeScript, Node.js,
 This project contains two independent applications:
 
 - **Backend** (`apps/backend`): Express + Apollo Server v4 + TypeORM + PostgreSQL
-- **Frontend** (`apps/frontend`): Next.js 14 + Apollo Client + Material UI
+- **Frontend** (`apps/frontend`): Next.js 14 (Pages Router) + Apollo Client + Material UI
 
 ## 📋 Prerequisites
 
@@ -222,16 +222,20 @@ Apollo Server v4 doesn't include GraphQL Playground by default. You can use:
 
 ### Example GraphQL Queries
 
-#### Fetch All Articles
+#### Fetch All Articles (with pagination)
 
 ```graphql
 query {
-  articles {
-    id
-    title
-    content
-    createdAt
-    imageUrl
+  articles(limit: 10, offset: 0) {
+    articles {
+      id
+      title
+      content
+      createdAt
+      imageUrl
+    }
+    totalCount
+    hasMore
   }
 }
 ```
@@ -245,6 +249,7 @@ query {
     title
     content
     createdAt
+    deletedAt
     imageUrl
   }
 }
@@ -279,12 +284,14 @@ mutation {
     input: {
       title: "Updated Title"
       content: "Updated content..."
+      imageUrl: "https://example.com/image.jpg"
     }
   ) {
     id
     title
     content
     createdAt
+    deletedAt
     imageUrl
   }
 }
@@ -321,33 +328,36 @@ sport-articles/
 │   │   └── package.json
 │   └── frontend/
 │       ├── src/
-│       │   ├── app/                   # Next.js app directory
-│       │   │   ├── layout.tsx
-│       │   │   ├── page.tsx           # List page (SSR)
-│       │   │   ├── create/
-│       │   │   │   └── page.tsx       # Create article page
-│       │   │   ├── article/
-│       │   │   │   └── [id]/
-│       │   │   │       ├── page.tsx   # Article details (SSR)
-│       │   │   │       └── edit/
-│       │   │   │           └── page.tsx # Edit article page
-│       │   │   └── globals.css
+│       │   ├── pages/                 # Next.js Pages Router
+│       │   │   ├── _app.tsx           # App wrapper with providers
+│       │   │   ├── _document.tsx      # Document structure
+│       │   │   ├── index.tsx           # List page (SSR with getServerSideProps)
+│       │   │   ├── create.tsx          # Create article page
+│       │   │   └── article/
+│       │   │       └── [articleId]/
+│       │   │           ├── [articleId].tsx  # Article details (SSR)
+│       │   │           └── edit.tsx         # Edit article page
 │       │   ├── components/
 │       │   │   ├── ApolloWrapper.tsx
 │       │   │   ├── ArticleDetailContent.tsx
 │       │   │   ├── ArticleImage.tsx
 │       │   │   ├── ArticlesList.tsx
+│       │   │   ├── CreateArticleContent.tsx
 │       │   │   ├── DeleteArticleModal.tsx
+│       │   │   ├── EditArticleContent.tsx
 │       │   │   ├── HomePageContent.tsx
-│       │   │   ├── ThemeRegistry.tsx
-│       │   │   └── UpdateArticleModal.tsx
-│       │   └── lib/
-│       │       ├── apollo-client.ts
-│       │       ├── ArticlesContext.tsx
-│       │       ├── graphql-server.ts
-│       │       ├── theme.ts
-│       │       └── graphql/
-│       │           └── queries.ts
+│       │   │   └── ThemeRegistry.tsx
+│       │   ├── lib/
+│       │   │   ├── apollo-client.ts        # Browser Apollo Client
+│       │   │   ├── apollo-server-client.ts # Server Apollo Client (SSR)
+│       │   │   ├── apollo-config.ts        # Shared Apollo Client config
+│       │   │   ├── theme.ts
+│       │   │   └── graphql/
+│       │   │       └── queries.ts          # GraphQL queries and mutations
+│       │   ├── types/
+│       │   │   └── article.ts              # Shared TypeScript types
+│       │   └── styles/
+│       │       └── globals.css
 │       ├── next.config.js            # Next.js config (image domains)
 │       ├── .env.example
 │       └── package.json
@@ -371,9 +381,9 @@ sport-articles/
 
 ### Frontend
 
-- **Next.js 14** - React framework with App Router
+- **Next.js 14** - React framework with Pages Router
 - **TypeScript** - Type-safe JavaScript
-- **Apollo Client** - GraphQL client
+- **Apollo Client** - GraphQL client (with SSR support)
 - **React Hook Form** - Form management
 - **Zod** - Schema validation
 - **Material UI** - React component library
@@ -399,22 +409,24 @@ sport-articles/
 ### Frontend
 
 - **Server-Side Rendering (SSR)**:
-  - List page shows first 10 articles via SSR
-  - Article details page uses SSR
+  - List page shows first 10 articles via SSR using `getServerSideProps`
+  - Article details page uses SSR with `getServerSideProps`
 - **Pages**:
   - `/` - Articles list with SSR
   - `/create` - Create new article
-  - `/article/[id]` - Article details with SSR
-  - `/article/[id]/edit` - Edit article
+  - `/article/[articleId]` - Article details with SSR
+  - `/article/[articleId]/edit` - Edit article
 - **Features**:
-  - Client-side validation
+  - Client-side validation using Zod
   - Server error handling
-  - Responsive design
+  - Responsive design with Material UI
   - Clean, user-friendly UI
   - Image support from any external URL
   - Error handling for failed image loads
   - Image loading indicators
   - Pagination with "Load More" functionality
+  - Apollo Client cache management
+  - Shared TypeScript types
 
 ## 🐛 Troubleshooting
 

@@ -1,14 +1,11 @@
 'use client';
 
-import { useQuery } from '@apollo/client';
+import { useQuery, useApolloClient } from '@apollo/client';
 import { GET_ARTICLES } from '@/lib/graphql/queries';
 import { useState, useCallback, useEffect } from 'react';
-import { UpdateArticleModal } from './UpdateArticleModal';
 import { DeleteArticleModal } from './DeleteArticleModal';
 import Link from 'next/link';
 import { ArticleImage } from './ArticleImage';
-import { SportsArticle } from '@/lib/graphql-server';
-import { useArticles } from '@/lib/ArticlesContext';
 import {
   Box,
   Card,
@@ -23,6 +20,7 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { SportsArticle } from '@/types/article';
 
 const PAGE_SIZE = 10;
 
@@ -45,85 +43,63 @@ export function ArticlesList({
   initialHasMore,
   initialTotalCount,
 }: ArticlesListProps) {
-  const { state, setArticles, appendArticles } = useArticles();
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [editingArticle, setEditingArticle] = useState<SportsArticle | null>(null);
   const [deletingArticle, setDeletingArticle] = useState<SportsArticle | null>(null);
-
-  const articles = state.isInitialized ? state.articles : initialArticles;
-  const hasMore = state.isInitialized ? state.hasMore : initialHasMore;
-  const totalCount = state.isInitialized ? state.totalCount : initialTotalCount;
+  const client = useApolloClient();
 
   useEffect(() => {
-    if (!state.isInitialized) {
-      setArticles(initialArticles, initialHasMore, initialTotalCount);
-    }
-  }, [state.isInitialized, initialArticles, initialHasMore, initialTotalCount, setArticles]);
+    client.writeQuery<ArticlesQueryData>({
+      query: GET_ARTICLES,
+      variables: { limit: PAGE_SIZE, offset: 0 },
+      data: {
+        articles: {
+          articles: initialArticles,
+          totalCount: initialTotalCount,
+          hasMore: initialHasMore,
+        },
+      },
+    });
+  }, [client, initialArticles, initialHasMore, initialTotalCount]);
 
-  const { loading, error, client } = useQuery<ArticlesQueryData>(GET_ARTICLES, {
+  const { data, loading, error, fetchMore } = useQuery<ArticlesQueryData>(GET_ARTICLES, {
     variables: { limit: PAGE_SIZE, offset: 0 },
-    fetchPolicy: 'cache-and-network',
+    fetchPolicy: 'cache-first',
     notifyOnNetworkStatusChange: true,
-    skip: state.isInitialized,
   });
 
+  const articles = data?.articles?.articles || initialArticles;
+  const hasMore = data?.articles?.hasMore ?? initialHasMore;
+  const totalCount = data?.articles?.totalCount ?? initialTotalCount;
+  const isLoadingMore = loading && articles.length > 0;
+
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
+    if (isLoadingMore || !hasMore) return;
 
-    setLoadingMore(true);
     try {
-      const result = await client.query<ArticlesQueryData>({
-        query: GET_ARTICLES,
-        variables: { limit: PAGE_SIZE, offset: articles.length },
-        fetchPolicy: 'network-only',
+      await fetchMore({
+        variables: {
+          limit: PAGE_SIZE,
+          offset: articles.length,
+        },
+        updateQuery: (prev, { fetchMoreResult }) => {
+          if (!fetchMoreResult) return prev;
+          return {
+            articles: {
+              ...fetchMoreResult.articles,
+              articles: [...prev.articles.articles, ...fetchMoreResult.articles.articles],
+            },
+          };
+        },
       });
-
-      const newArticles = result.data.articles.articles;
-      appendArticles(newArticles, result.data.articles.hasMore, result.data.articles.totalCount);
     } catch (err) {
       console.error('Error loading more articles:', err);
-    } finally {
-      setLoadingMore(false);
     }
-  }, [client, articles.length, hasMore, loadingMore, appendArticles]);
-
-  const handleRefresh = useCallback(async () => {
-    try {
-      const result = await client.query<ArticlesQueryData>({
-        query: GET_ARTICLES,
-        variables: { limit: PAGE_SIZE, offset: 0 },
-        fetchPolicy: 'network-only',
-      });
-      if (result.data) {
-        setArticles(
-          result.data.articles.articles,
-          result.data.articles.hasMore,
-          result.data.articles.totalCount
-        );
-      }
-    } catch (err) {
-      console.error('Error refreshing articles:', err);
-    }
-  }, [client, setArticles]);
-
-  const handleEditClose = useCallback(
-    (updated?: boolean) => {
-      setEditingArticle(null);
-      if (updated) {
-        handleRefresh();
-      }
-    },
-    [handleRefresh]
-  );
+  }, [fetchMore, articles.length, hasMore, isLoadingMore]);
 
   const handleDeleteClose = useCallback(
     (deleted?: boolean) => {
       setDeletingArticle(null);
-      if (deleted) {
-        handleRefresh();
-      }
     },
-    [handleRefresh]
+    []
   );
 
   if (loading && articles.length === 0) {
@@ -227,7 +203,8 @@ export function ArticlesList({
                   <Button
                     size="small"
                     startIcon={<EditIcon />}
-                    onClick={() => setEditingArticle(article)}
+                    component={Link}
+                    href={`/article/${article.id}/edit`}
                   >
                     Edit
                   </Button>
@@ -252,16 +229,12 @@ export function ArticlesList({
             variant="outlined"
             size="large"
             onClick={loadMore}
-            disabled={loadingMore}
-            startIcon={loadingMore ? <CircularProgress size={20} /> : <ExpandMoreIcon />}
+            disabled={isLoadingMore}
+            startIcon={isLoadingMore ? <CircularProgress size={20} /> : <ExpandMoreIcon />}
           >
-            {loadingMore ? 'Loading...' : 'Load More'}
+            {isLoadingMore ? 'Loading...' : 'Load More'}
           </Button>
         </Box>
-      )}
-
-      {editingArticle && (
-        <UpdateArticleModal article={editingArticle} onClose={handleEditClose} />
       )}
 
       {deletingArticle && (

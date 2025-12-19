@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ArticleImage } from './ArticleImage';
 import { Box, Container, Typography, Paper, Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { SportsArticle } from '@/lib/graphql-server';
+import { SportsArticle } from '@/types/article';
 
 interface ArticleDetailContentProps {
   article: SportsArticle;

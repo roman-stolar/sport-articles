@@ -5,7 +5,7 @@ import { CREATE_ARTICLE, GET_ARTICLES } from '@/lib/graphql/queries';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
   Box,
@@ -17,7 +17,6 @@ import {
   Alert,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useArticles } from '@/lib/ArticlesContext';
 
 const createArticleSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -27,16 +26,13 @@ const createArticleSchema = z.object({
 
 type CreateArticleFormData = z.infer<typeof createArticleSchema>;
 
-export default function CreateArticlePage() {
+export function CreateArticleContent() {
   const router = useRouter();
-  const { reset } = useArticles();
   const [createArticle, { loading, error }] = useMutation(CREATE_ARTICLE, {
     refetchQueries: [{ query: GET_ARTICLES, variables: { limit: 10, offset: 0 } }],
     awaitRefetchQueries: true,
     onCompleted: () => {
-      reset();
       router.push('/');
-      router.refresh();
     },
   });
 
@@ -135,3 +131,4 @@ export default function CreateArticlePage() {
     </Box>
   );
 }
+

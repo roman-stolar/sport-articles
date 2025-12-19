@@ -2,7 +2,6 @@
 
 import { useMutation } from '@apollo/client';
 import { DELETE_ARTICLE, GET_ARTICLES } from '@/lib/graphql/queries';
-import { SportsArticle } from '@/lib/graphql-server';
 import {
   Dialog,
   DialogTitle,
@@ -13,6 +12,7 @@ import {
   Typography,
   Paper,
 } from '@mui/material';
+import { SportsArticle } from '@/types/article';
 
 interface DeleteArticleModalProps {
   article: SportsArticle;
